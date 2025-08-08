@@ -28,6 +28,25 @@ python token_multiplexer.py \
   --scope "https://vault.azure.net/.default"
 ```
 
+🔑 kv-dump-old-versions.py — Enumerate and Dump Azure Key Vault Secret Versions
+
+This script enumerates secrets in Azure Key Vaults and retrieves all available versions, including old values that might remain after rotation.
+
+Features
+	•	Works on a single vault or all vaults in a subscription.
+	•	Dumps all secret versions with flags for which one is latest.
+	•	Supports table view (human-friendly) and JSON output (machine-friendly).
+	•	Flags old values that differ from the latest version.
+
+Usage
+```bash
+# Enumerate all vaults in a subscription
+python3 kv-dump-old-versions.py --subscription-id <subscription-id>
+
+# Target a specific vault and output as JSON
+python3 kv-dump-old-versions.py --vault kv-1-2e693029 --output json
+```
+
 ⚠️ Disclaimer
 
 For educational and lab use only.
