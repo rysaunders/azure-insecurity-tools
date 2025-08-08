@@ -68,6 +68,28 @@ python3 kv-recover-deleted.py --vault kv-3-2e693029
 python3 kv-recover-deleted.py --vault kv-3-2e693029 --recover-all
 ```
 
+### 🔍 role-attack-surf.py
+	•	Lists your role assignments at a given scope (vault/RG/subscription)
+	•	Pulls each role definition
+	•	Flags interesting Actions/DataActions (stuff that tends to be abusable)
+	•	Prints a summary + optional JSON
+	•	Suggests quick exploits (e.g., set-policy when it sees accessPolicies/write)
+
+#### Usage
+```bash
+# At a vault scope (like your lab)
+python3 role-attack-surf.py \
+  --scope "/subscriptions/<sub>/resourceGroups/key-vault-labs/providers/Microsoft.KeyVault/vaults/<vault>""
+
+# Filter to your SP only (faster to read)
+python3 role-attack-surf.py \
+  --scope "/subscriptions/<sub>/resourceGroups/key-vault-labs/providers/Microsoft.KeyVault/vaults/<vault>" \
+  --assignee <client_id>
+
+# Dump full JSON too
+python3 role-attack-surf.py --scope "/subscriptions/<sub>" --json
+```
+
 ⚠️ Disclaimer
 
 For educational and lab use only.
