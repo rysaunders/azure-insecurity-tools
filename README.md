@@ -26,3 +26,10 @@ python token_multiplexer.py \
   --client-id "your-app-client-id" \
   --client-secret "your-app-client-secret" \
   --scope "https://vault.azure.net/.default"
+```
+
+⚠️ Disclaimer
+
+For educational and lab use only.
+
+Do not use these tools without explicit permission. They are intended to support self-hosted labs, CTF environments, and ethical security testing.
