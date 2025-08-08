@@ -59,6 +59,14 @@ python3 kv-rsa-decrypt.py \
 python3 kv-rsa-decrypt.py --key-id ... --ciphertext-b64 ... --algo RSA-OAEP
 ```
 
+### 🗑️ kv-recover-deleted.py
+List+recover deleted secrets for a vault
+
+#### Usage
+```bash
+python3 kv-recover-deleted.py --vault kv-3-2e693029
+python3 kv-recover-deleted.py --vault kv-3-2e693029 --recover-all
+```
 
 ⚠️ Disclaimer
 
