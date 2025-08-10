@@ -90,6 +90,21 @@ python3 role-attack-surf.py \
 python3 role-attack-surf.py --scope "/subscriptions/<sub>" --json
 ```
 
+### ﹟psenc.py
+Output Powershell-read -EncodedCommand string given a file, command, or stdin
+
+#### Usage
+```bash
+# direct command
+python3 psenc.py -c 'Write-Host "Hello from Mac!"' --print-example
+
+# from a file
+python3 psenc.py -f payload.ps1 > encoded.txt
+
+# from stdin (handy in pipelines)
+echo '$PSVersionTable.PSVersion' | python3 psenc.py --stdin
+```
+
 ⚠️ Disclaimer
 
 For educational and lab use only.
