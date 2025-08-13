@@ -129,6 +129,26 @@ This will:
 	4.	POST results to the given webhook.
 
 
+### 📦 az-vars.sh
+
+Extracts and exports key Azure resource identifiers and settings from JSON CLI output into shell variables for quick reuse in pentest or automation workflows.
+
+#### Usage
+```bash
+# Pipe Azure CLI JSON output into script
+az postgres flexible-server list -o json | bash az-vars.sh
+
+# Or execute directly if marked executable
+az postgres flexible-server list -o json | ./az-vars.sh
+```
+
+This will:
+	1.	Parse JSON input from stdin (e.g., az <resource> list -o json).
+	2.	Extract commonly used fields like id, name, resourceGroup, location, fqdn.
+	3.	Export each as an environment variable (e.g., $AZ_NAME, $AZ_RG).
+	4.	Print them in VAR=value form for quick copy/paste into other commands.
+
+
 ⚠️ Disclaimer
 
 For educational and lab use only.

