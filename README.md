@@ -166,7 +166,14 @@ Deploy a custom container to Azure App Service to harvest Managed Identity token
 
 **See:** [`appservice-harvest/README.md`](./appservice-harvest/README.md) for full details, setup, and usage instructions.
 
+--- 
+
+### 📄 task-kv.yaml
+
+A simple ACR task template that leverages an MI's access to Key Vault to exfil secrets via echo into build logs
+
 ---
+
 
 ⚠️ **Disclaimer**  
 For educational and lab use only.  

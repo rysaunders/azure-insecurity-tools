@@ -1,0 +1,16 @@
+# task-kv.yaml
+# Template to extract a secret and echo to logs during ACR task run
+version: v1.1.0
+stepTimeout: 1800
+trigger: none
+
+# 1) Pull the secret from Key Vault using the task's managed identity
+secrets:
+  - id: kvflag
+    keyvault: https://<kv-name>.vault.azure.net/secrets/<secret>
+
+# 2) Expose it as an env var to your step and echo it
+steps:
+  - cmd: bash echo flag='{{.Secrets.kvflag}}'
+
+
