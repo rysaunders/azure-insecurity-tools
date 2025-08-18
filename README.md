@@ -174,6 +174,12 @@ A simple ACR task template that leverages an MI's access to Key Vault to exfil s
 
 ---
 
+### 📩 servicebus_client.py
+
+A simple Service Bus client that retrieves messages given a queue or topic/subscription and a primary key
+
+---
+
 
 ⚠️ **Disclaimer**  
 For educational and lab use only.  
