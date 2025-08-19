@@ -166,17 +166,19 @@ Deploy a custom container to Azure App Service to harvest Managed Identity token
 
 **See:** [`appservice-harvest/README.md`](./appservice-harvest/README.md) for full details, setup, and usage instructions.
 
---- 
 
 ### 📄 task-kv.yaml
 
 A simple ACR task template that leverages an MI's access to Key Vault to exfil secrets via echo into build logs
 
----
 
 ### 📩 servicebus_client.py
 
 A simple Service Bus client that retrieves messages given a queue or topic/subscription and a primary key
+
+### ☣️ token_exfil.ps1
+
+One-liner PowerShell script that can run in the context of an automation job, container, etc. Queries the metadata endpoint for a vault token and exfiltrates to a webhook.
 
 ---
 

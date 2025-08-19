@@ -6,8 +6,8 @@ CONN_STR = "<PrimaryConnectionString>"
 #QUEUE = "<QUEUE_NAME>"
 
 # For topics/subscriptions, you would use:
-TOPIC = "<TOPIC>"
-SUBSCRIPTION = "<SUBSCRIPTION"
+TOPIC = "labtopic"
+SUBSCRIPTION = "labsub"
 
 async def receive():
     async with ServiceBusClient.from_connection_string(CONN_STR) as client:
